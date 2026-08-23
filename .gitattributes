@@ -1,0 +1,5 @@
+# These run on Linux — CRLF would break them on checkout from Windows
+*.sh text eol=lf
+*.service text eol=lf
+*.py text eol=lf
+uv.lock text eol=lf
