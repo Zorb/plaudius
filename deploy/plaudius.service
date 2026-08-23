@@ -1,0 +1,17 @@
+[Unit]
+Description=Plaudius voice-memo-to-brief service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__DEPLOY_USER__
+WorkingDirectory=/home/__DEPLOY_USER__/plaudius
+# VM clock is UTC; note filenames should use UK-local time
+Environment=TZ=Europe/London
+ExecStart=/home/__DEPLOY_USER__/plaudius/.venv/bin/python -m plaudius
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

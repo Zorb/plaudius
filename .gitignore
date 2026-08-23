@@ -1,0 +1,12 @@
+# Local-only plans/lessons (never commit)
+plan/
+
+# Secrets & runtime state
+.env
+data/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
