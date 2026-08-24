@@ -1,5 +1,6 @@
-# Local-only plans/lessons (never commit)
+# Local-only plans/lessons and Claude session files (never commit)
 plan/
+.claude/
 
 # Secrets & runtime state
 .env
