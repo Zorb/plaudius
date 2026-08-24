@@ -73,6 +73,16 @@ cd ~/plaudius && uv run scripts/smoke_test.py
 Posts `scripts/sample-memo.mp3`, polls the job, and asserts the brief appears
 in the vault with the right structure.
 
+## Vault sync (Obsidian Sync via container)
+
+`/data/vault` reaches the iPhone through official Obsidian Sync, relayed by the
+Obsidian desktop app running in a container on the VM (`deploy/obsidian-sync/`).
+One-time setup: `docker compose -f ~/plaudius/deploy/obsidian-sync/compose.yaml up -d`,
+open `http://__TAILNET_IP__:3000`, open `/vault` as a folder-vault, sign in to
+Obsidian Sync, create/connect the dedicated remote vault, enable sync. The
+remote vault's name must match `OBSIDIAN_VAULT` in `.env`, and the same vault
+must be added on the iPhone. The container auto-starts with Docker.
+
 ## iPhone Shortcut (not in this repo)
 
 "Get Contents of URL": `http://__TAILNET_IP__:8321/memo`, method POST, header

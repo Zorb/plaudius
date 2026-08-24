@@ -1,0 +1,23 @@
+# Obsidian desktop app in a container (KasmVNC web UI) — the bridge that feeds
+# Obsidian Sync. It opens /data/vault as a vault and syncs it to the user's
+# devices 24/7. One-time setup happens in the browser UI (see README).
+services:
+  obsidian:
+    image: lscr.io/linuxserver/obsidian:latest
+    container_name: obsidian-sync
+    environment:
+      - PUID=1000   # __DEPLOY_USER__, so the container and plaudius agree on file ownership
+      - PGID=1000
+      - TZ=Europe/London
+      # Optional web-UI basic auth (tailnet-only exposure already):
+      # - CUSTOM_USER=__DEPLOY_USER__
+      # - PASSWORD=change-me
+    volumes:
+      - /home/__DEPLOY_USER__/obsidian-config:/config
+      - /data/vault:/vault
+    ports:
+      - "__TAILNET_IP__:3000:3000"  # web UI, Tailscale interface only
+    shm_size: "1gb"
+    security_opt:
+      - seccomp=unconfined  # Electron-in-container needs this on some kernels
+    restart: unless-stopped
