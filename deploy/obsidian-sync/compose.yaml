@@ -16,7 +16,8 @@ services:
       - /home/__DEPLOY_USER__/obsidian-config:/config
       - /data/vault:/vault
     ports:
-      - "__TAILNET_IP__:3000:3000"  # web UI, Tailscale interface only
+      - "__TAILNET_IP__:3000:3000"  # web UI HTTP (Selkies refuses to stream over it)
+      - "__TAILNET_IP__:3001:3001"  # web UI HTTPS (self-signed) — use this one
     shm_size: "1gb"
     security_opt:
       - seccomp=unconfined  # Electron-in-container needs this on some kernels
