@@ -83,6 +83,16 @@ Obsidian Sync, create/connect the dedicated remote vault, enable sync. The
 remote vault's name must match `OBSIDIAN_VAULT` in `.env`, and the same vault
 must be added on the iPhone. The container auto-starts with Docker.
 
+## Push notifications (self-hosted ntfy)
+
+ntfy runs in a container on the VM (`deploy/ntfy/`), tailnet-bound at
+`http://__TAILNET_IP__:8322`, topic `plaudius`. `NTFY_UPSTREAM_BASE_URL=https://ntfy.sh`
+makes iOS delivery instant: a content-free wake ping goes through Apple's push
+pipeline and the phone fetches the actual message from this server — brief content
+never leaves the box. Phone setup: ntfy app → add server `http://__TAILNET_IP__:8322`
+→ subscribe to `plaudius`. Auth is off (tailnet-only); hardening commands are
+commented in the compose file.
+
 ## iPhone Shortcut (not in this repo)
 
 "Get Contents of URL": `http://__TAILNET_IP__:8321/memo`, method POST, header

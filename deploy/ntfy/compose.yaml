@@ -1,0 +1,27 @@
+# Self-hosted ntfy for Plaudius pushes. Tailnet-bound, no auth (anything on the
+# tailnet can pub/sub). NTFY_UPSTREAM_BASE_URL is the iOS-critical bit: iOS apps
+# can't hold background connections, so ntfy sends a content-free wake ping via
+# ntfy.sh's Apple push pipeline and the phone then fetches the real message from
+# THIS server — brief content never leaves the box.
+#
+# Optional hardening (require login/token):
+#   add env  NTFY_AUTH_FILE=/var/lib/ntfy/auth.db  NTFY_AUTH_DEFAULT_ACCESS=deny-all
+#   plus volume /home/__DEPLOY_USER__/ntfy-auth:/var/lib/ntfy, then:
+#   docker exec -it ntfy ntfy user add --role=admin __DEPLOY_USER__
+#   docker exec -it ntfy ntfy token add __DEPLOY_USER__        # -> NTFY_TOKEN in plaudius .env
+services:
+  ntfy:
+    image: binwiederhier/ntfy:latest
+    container_name: ntfy
+    command: serve
+    environment:
+      - TZ=Europe/London
+      - NTFY_BASE_URL=http://__TAILNET_IP__:8322
+      - NTFY_UPSTREAM_BASE_URL=https://ntfy.sh
+      - NTFY_CACHE_FILE=/var/cache/ntfy/cache.db
+      - NTFY_CACHE_DURATION=24h
+    volumes:
+      - /home/__DEPLOY_USER__/ntfy-cache:/var/cache/ntfy
+    ports:
+      - "__TAILNET_IP__:8322:80"  # Tailscale interface only
+    restart: unless-stopped
