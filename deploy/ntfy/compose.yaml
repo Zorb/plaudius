@@ -3,12 +3,13 @@
 # can't hold background connections, so ntfy sends a content-free wake ping via
 # ntfy.sh's Apple push pipeline and the phone then fetches the real message from
 # THIS server — brief content never leaves the box.
+# __DEPLOY_USER__/__TAILNET_IP__ are rendered by deploy.sh at deploy time.
 #
 # Optional hardening (require login/token):
 #   add env  NTFY_AUTH_FILE=/var/lib/ntfy/auth.db  NTFY_AUTH_DEFAULT_ACCESS=deny-all
-#   plus volume /home/__DEPLOY_USER__/ntfy-auth:/var/lib/ntfy, then:
-#   docker exec -it ntfy ntfy user add --role=admin __DEPLOY_USER__
-#   docker exec -it ntfy ntfy token add __DEPLOY_USER__        # -> NTFY_TOKEN in plaudius .env
+#   plus a volume for /var/lib/ntfy, then:
+#   docker exec -it ntfy ntfy user add --role=admin me
+#   docker exec -it ntfy ntfy token add me           # -> NTFY_TOKEN in plaudius .env
 services:
   ntfy:
     image: binwiederhier/ntfy:latest

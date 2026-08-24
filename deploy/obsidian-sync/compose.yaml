@@ -1,16 +1,17 @@
-# Obsidian desktop app in a container (KasmVNC web UI) — the bridge that feeds
+# Obsidian desktop app in a container (Selkies web UI) — the bridge that feeds
 # Obsidian Sync. It opens /data/vault as a vault and syncs it to the user's
 # devices 24/7. One-time setup happens in the browser UI (see README).
+# __DEPLOY_USER__/__TAILNET_IP__ are rendered by deploy.sh at deploy time.
 services:
   obsidian:
     image: lscr.io/linuxserver/obsidian:latest
     container_name: obsidian-sync
     environment:
-      - PUID=1000   # __DEPLOY_USER__, so the container and plaudius agree on file ownership
+      - PUID=1000   # deploy user's uid, so the container and plaudius agree on ownership
       - PGID=1000
       - TZ=Europe/London
       # Optional web-UI basic auth (tailnet-only exposure already):
-      # - CUSTOM_USER=__DEPLOY_USER__
+      # - CUSTOM_USER=me
       # - PASSWORD=change-me
     volumes:
       - /home/__DEPLOY_USER__/obsidian-config:/config

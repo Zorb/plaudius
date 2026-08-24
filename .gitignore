@@ -3,9 +3,10 @@ plan/
 .claude/
 CLAUDE.md
 
-# Secrets & runtime state
+# Secrets & runtime state (local-only; never commit)
 .env
 data/
+deploy/local.conf
 
 # Python
 .venv/

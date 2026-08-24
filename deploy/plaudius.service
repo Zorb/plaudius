@@ -5,6 +5,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
+# __DEPLOY_USER__ is rendered by deploy.sh at deploy time
 User=__DEPLOY_USER__
 WorkingDirectory=/home/__DEPLOY_USER__/plaudius
 # VM clock is UTC; note filenames should use UK-local time

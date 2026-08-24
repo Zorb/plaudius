@@ -3,11 +3,11 @@
 Press a button on your iPhone, talk, and a structured brief of what you said
 appears in Obsidian — with a push notification that opens it.
 
-The Shortcut POSTs the recording over Tailscale to a FastAPI service on
-ubuntu-main. The service transcribes it with **Deepgram Nova-3**, distills a
-brief with **claude-haiku-4-5**, writes a markdown note into the synced vault,
-and pushes via **self-hosted ntfy**; tapping the push opens the note via an
-`obsidian://` URI.
+The Shortcut POSTs the recording over Tailscale to a FastAPI service on a home
+VM. The service transcribes it with **Deepgram Nova-3**, distills a brief with
+**claude-haiku-4-5**, writes a markdown note into the synced vault, and pushes
+via **self-hosted ntfy**; tapping the push opens the note via an `obsidian://`
+URI.
 
 ```
 iPhone Shortcut (side/Action button)
@@ -29,8 +29,16 @@ Three pieces run on the VM:
 | Piece | What | Where |
 |---|---|---|
 | `plaudius` | The service (systemd unit, port 8321) | `src/`, `deploy/plaudius.service` |
-| `obsidian-sync` | Obsidian desktop app in a container, signed into Obsidian Sync, vault `Plaudius` mounted from `/data/vault` — the bridge that gets notes to devices | `deploy/obsidian-sync/` |
-| `ntfy` | Self-hosted push server, tailnet-bound `:8322`, topic `plaudius` | `deploy/ntfy/` |
+| `obsidian-sync` | Obsidian desktop app in a container, signed into Obsidian Sync, the vault mounted from `/data/vault` — the bridge that gets notes to devices | `deploy/obsidian-sync/` |
+| `ntfy` | Self-hosted push server, tailnet-bound `:8322` | `deploy/ntfy/` |
+
+Host specifics (`__DEPLOY_USER__`, `__TAILNET_IP__`) are tokens in the deploy
+templates, rendered at deploy time from `deploy/local.conf` (gitignored):
+
+```sh
+# deploy/local.conf
+DEPLOY_HOST=you@your-tailscale-ip
+```
 
 ## API
 
@@ -43,11 +51,11 @@ Three pieces run on the VM:
 
 ## Brief format
 
-Filename `YYYY-MM-DD HHmm - {slug of thesis}.md` (UK-local time; collisions get
-` 2`, ` 3`…). YAML frontmatter: `date`, `duration_seconds`, `engine`, `tags`
-(LLM-suggested, lowercased). Sections: Thesis / Key Points / Actions / Open
-Questions / Transcript (paragraph-formatted). The LLM only returns JSON; the
-markdown is rendered in code, so the structure is guaranteed.
+Filename `YYYY-MM-DD HHmm - {slug of thesis}.md` (local time via the unit's TZ;
+collisions get ` 2`, ` 3`…). YAML frontmatter: `date`, `duration_seconds`,
+`engine`, `tags` (LLM-suggested, lowercased). Sections: Thesis / Key Points /
+Actions / Open Questions / Transcript (paragraph-formatted). The LLM only
+returns JSON; the markdown is rendered in code, so the structure is guaranteed.
 
 ## .env
 
@@ -59,34 +67,37 @@ random `PLAUDIUS_TOKEN`). Deploys never overwrite an existing `.env`.
 | `PLAUDIUS_TOKEN` | Bearer token the Shortcut sends; restart after changing |
 | `DEEPGRAM_API_KEY` / `ANTHROPIC_API_KEY` | Hosted engine credentials |
 | `ANTHROPIC_MODEL` | Default `claude-haiku-4-5` |
-| `NTFY_URL` / `NTFY_TOPIC` / `NTFY_TOKEN` | `http://__TAILNET_IP__:8322` / `plaudius` / empty (no auth) |
-| `OBSIDIAN_VAULT` | `Plaudius` — must match the vault name in the Obsidian app |
+| `NTFY_URL` / `NTFY_TOPIC` / `NTFY_TOKEN` | e.g. `http://<tailscale-ip>:8322` / topic name / empty unless ntfy auth is on |
+| `OBSIDIAN_VAULT` | Vault name exactly as the Obsidian app shows it (for the obsidian:// click URI) |
 | `VAULT_DIR` / `DATA_DIR` | `/data/vault/briefs` / `data` (spool + queue db) |
 | `HOST` / `PORT` / `MAX_UPLOAD_MB` | `0.0.0.0` / `8321` / `500` |
 
 ## Setting up from scratch
 
-On a fresh VM: install Docker; `sudo mkdir -p /data/vault/briefs && sudo chown -R <user>: /data/vault`.
+On a fresh VM: install Docker; create the vault dir
+(`sudo mkdir -p /data/vault/briefs && sudo chown -R <user>: /data/vault`).
+Locally: write `deploy/local.conf` as above.
 
-1. `bash deploy/deploy.sh` — ships the tree, installs uv, syncs deps, installs
-   the systemd unit via `systemctl link`, starts it.
+1. `bash deploy/deploy.sh` — ships the tree, renders the host tokens, installs
+   uv, syncs deps, installs the systemd unit via `systemctl link`, starts it.
 2. Fill the API keys in `~/plaudius/.env`, `sudo systemctl restart plaudius`.
 3. `docker compose -f ~/plaudius/deploy/obsidian-sync/compose.yaml up -d`, open
-   **https**://__TAILNET_IP__:**3001** (self-signed cert; port 3000 gives a black
-   screen — Selkies refuses to stream without a secure context). Inside Obsidian:
-   Open folder as vault → `/vault` (Ctrl+L to type the path), sign in to Obsidian
-   Sync, create/connect the remote vault, enable sync. Add the same vault on the
-   phone (same E2E encryption password).
+   **https**://\<tailscale-ip\>:**3001** (self-signed cert; port 3000 gives a
+   black screen — Selkies refuses to stream without a secure context). Inside
+   Obsidian: Open folder as vault → `/vault` (Ctrl+L to type the path), sign in
+   to Obsidian Sync, create/connect the remote vault, enable sync. Add the same
+   vault on the phone (same E2E encryption password).
 4. `docker compose -f ~/plaudius/deploy/ntfy/compose.yaml up -d`. On the phone,
-   ntfy app → add server `http://__TAILNET_IP__:8322` → subscribe `plaudius`.
+   ntfy app → add server `http://<tailscale-ip>:8322` → subscribe to your topic.
    iOS delivery is instant via `NTFY_UPSTREAM_BASE_URL=https://ntfy.sh` — a
    content-free wake ping goes through Apple's pipeline and the phone fetches the
    message from this server, so brief content never leaves the box. Auth is off
    (tailnet-only); hardening commands are commented in the compose file.
 5. iPhone Shortcut: Record Audio (Finish Recording: On Tap) → Get Contents of URL
-   → `http://__TAILNET_IP__:8321/memo`, POST, header `Authorization: Bearer <token>`,
-   body File = the recording. Map it to the Action Button (Settings → Action
-   Button → Shortcut) or Back Tap on older phones.
+   → `http://<tailscale-ip>:8321/memo`, POST, header
+   `Authorization: Bearer <token>`, body File = the recording. Map it to the
+   Action Button (Settings → Action Button → Shortcut) or Back Tap on older
+   phones.
 
 ## Operations
 
